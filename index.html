@@ -1893,8 +1893,8 @@ footer {
               <input type="date" class="form-input" id="delivery-date">
             </div>
             <div class="form-field">
-              <label class="form-label" for="delivery-time">Horario</label>
-              <select class="form-input" id="delivery-time">
+              <label class="form-label" for="builder-delivery-time">Horario</label>
+              <select class="form-input" id="builder-delivery-time">
                 <option>9:00 – 12:00</option>
                 <option>12:00 – 15:00</option>
                 <option>15:00 – 18:00</option>
@@ -2137,7 +2137,7 @@ footer {
 
     <input type="date" id="customer-date" class="form-input">
 
-    <select class="form-input" id="delivery-time">
+    <select class="form-input" id="checkout-delivery-time">
                 <option>9:00 – 12:00</option>
                 <option>12:00 – 15:00</option>
                 <option>15:00 – 18:00</option>
@@ -2560,7 +2560,7 @@ function proceedCheckout() {
   const customerName = document.getElementById('customer-name').value.trim();
   const customerAddress = document.getElementById('customer-address').value.trim();
   const deliveryDate = document.getElementById('customer-date').value;
-  const deliveryTime = document.getElementById('delivery-time').value;
+  const deliveryTime = document.getElementById('checkout-delivery-time').value;
 
   if (!customerName || !customerAddress || !deliveryDate || !deliveryTime) {
     showToast('Completa todos los campos');
@@ -2673,8 +2673,8 @@ function updateWishlistUI() {
     <div class="cart-item-name">${item.name}</div>
 
     <div class="wishlist-actions">
-      <button class="btn btn-ghost btn-sm" onclick="viewWishlistProduct('${item.name}')">
-          Ver producto
+      <button class="btn btn-ghost btn-sm" onclick="viewProduct('${item.name}')">
+      Ver producto
       </button>
       <button class="btn btn-ghost btn-sm" onclick="removeFromWishlist('${item.name}')">
           Eliminar
@@ -2733,6 +2733,49 @@ function restoreWishlistButtons() {
   });
 }
 
+
+function viewProduct(productName) {
+  toggleWishlist();
+  const products = document.querySelectorAll('#products-grid .product-card');
+
+  let targetProduct = null;
+
+  products.forEach(product => {
+    const name = product.querySelector('.product-name')?.textContent.trim();
+
+    if (name === productName) {
+      targetProduct = product;
+    }
+  });
+
+  if (!targetProduct) return;
+
+  const isHidden = window.getComputedStyle(targetProduct).display === 'none';
+
+  if (isHidden && !productsExpanded) {
+    toggleProducts();
+
+    setTimeout(() => {
+      scrollToWishlistProduct(targetProduct);
+    }, 900);
+  } else {
+    scrollToWishlistProduct(targetProduct);
+  }
+}
+
+
+function scrollToWishlistProduct(product) {
+  product.scrollIntoView({
+    behavior: 'smooth',
+    block: 'center'
+  });
+
+  product.classList.remove('wishlist-highlight');
+
+  setTimeout(() => {
+    product.classList.add('wishlist-highlight');
+  }, 500);
+}
 // ─────────────── PANELS CART-WISHLIST ───────────────
 
 function closePanels() {
@@ -2904,7 +2947,7 @@ function sendBuilderToWhatsApp() {
   const phone = '51932331503';
 
   const deliveryDate = document.getElementById('delivery-date').value;
-  const deliveryTime = document.getElementById('delivery-time').value;
+  const deliveryTime = document.getElementById('builder-delivery-time').value;
 
   const extras =
     builderState.extrasList.length > 0
