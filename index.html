@@ -449,6 +449,11 @@ button,input,select,textarea { font-family:inherit; }
 /* =====================================================
    PRODUCTS SECTION
    ===================================================== */
+
+#products {
+  padding: 4rem 0 2rem 0;
+}
+
 .products-toolbar {
   display:flex; align-items:center; gap:1rem;
   flex-wrap:wrap;
@@ -489,6 +494,7 @@ button,input,select,textarea { font-family:inherit; }
   display:grid;
   grid-template-columns: repeat(auto-fill, minmax(240px,1fr));
   gap:1.5rem;
+  align-items:stretch;
 }
 
 .product-card {
@@ -498,6 +504,11 @@ button,input,select,textarea { font-family:inherit; }
   border:1px solid var(--border);
   transition: all var(--transition);
   position:relative;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  display:flex;
+  flex-direction:column;
+  height: 100%;
 }
 .product-card:hover { transform:translateY(-6px); box-shadow:var(--shadow-lg); }
 
@@ -559,7 +570,12 @@ button,input,select,textarea { font-family:inherit; }
   }
 }
 
-.product-card-body { padding:1rem 1.1rem 1.2rem; }
+.product-card-body {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
 
 .product-name {
   font-family:var(--font-display);
@@ -571,6 +587,7 @@ button,input,select,textarea { font-family:inherit; }
   font-size:.78rem; color:var(--text-muted);
   margin-bottom:.6rem;
   display:-webkit-box;
+  line-clamp: 2;
   -webkit-line-clamp:2;
   -webkit-box-orient:vertical;
   overflow:hidden;
@@ -597,8 +614,47 @@ button,input,select,textarea { font-family:inherit; }
 }
 .product-stock { font-size:.7rem; color:var(--sage-dark); font-weight:500; }
 
-.product-actions { display:flex; gap:.5rem; }
+.product-actions { display:flex; gap:.5rem; margin-top: auto;}
 .product-actions .btn { flex:1; justify-content:center; padding:.55rem .8rem; font-size:.78rem; }
+
+/* =====================================================
+    PRODUCTS TOGGLE BUTTON
+   ===================================================== */
+
+.products-toggle-wrap {
+  display: flex;
+  justify-content: center;
+  margin-top: 1.5rem;
+  margin-bottom: 3rem;
+}
+
+.toggle-products-btn {
+  padding: .9rem 1.5rem;
+  border: none;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--gold) 0%, var(--gold-deep) 100%);
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .3s ease;
+}
+
+.toggle-products-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(201,168,76,.35);
+}
+
+
+.toggle-products-btn.compact {
+  width: 54px;
+  height: 54px;
+  padding: 0;
+  border-radius: 50%;
+  font-size: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
 /* =====================================================
    PERSONALIZER / BOUQUET BUILDER
@@ -1477,7 +1533,7 @@ footer {
 
     <!-- Products Grid -->
     <div class="products-grid" id="products-grid">
-
+    
       <!-- Product 1 -->
       <article class="product-card reveal" data-category="roses" data-product="1">
         <div class="product-card-img">
@@ -1714,6 +1770,13 @@ footer {
     </div>
   </div>
 </section>
+</div>
+
+<div class="products-toggle-wrap">
+  <button id="toggle-products-btn" class="toggle-products-btn" onclick="toggleProducts()">
+    Mostrar más productos
+  </button>
+</div>
 
 <!-- =====================================================
      PERSONALIZER / BOUQUET BUILDER
@@ -2687,16 +2750,93 @@ function closePanels() {
 function filterProducts(btn, cat) {
   document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
   btn.classList.add('active');
+
   const cards = document.querySelectorAll('.product-card');
+  const toggleBtn = document.getElementById('toggle-products-btn');
+
+  // Si es "Todos", volver al sistema normal de 8 productos
+  if (cat === 'all') {
+    productsExpanded = false;
+
+    cards.forEach((card, index) => {
+      card.style.display = index < visibleProducts ? '' : 'none';
+      card.style.opacity = '';
+    });
+
+    toggleBtn.style.display = 'block';
+    toggleBtn.classList.remove('compact');
+    toggleBtn.innerHTML = 'Mostrar más productos';
+    return;
+  }
+
+  // Si se selecciona un filtro → ocultar botón y mostrar todos los productos
+  toggleBtn.style.display = 'none';
+
   cards.forEach(card => {
     const cats = card.getAttribute('data-category') || '';
-    const show = cat === 'all' || cats.includes(cat);
+    const show = cats.includes(cat);
+
     card.style.display = show ? '' : 'none';
     card.style.opacity = show ? '' : '0';
   });
 }
-function loadMoreProducts() {
-  showToast('Cargando más productos…');
+
+// ─────────────── SHOW MORE PRODUCTS ───────────────
+
+let productsExpanded = false;
+const visibleProducts = 8;
+
+function initializeProducts() {
+  const products = document.querySelectorAll('#products-grid .product-card');
+
+  products.forEach((product, index) => {
+    if (index >= visibleProducts) {
+      product.style.display = 'none';
+    }
+  });
+
+  const btn = document.getElementById('toggle-products-btn');
+
+  if (products.length <= visibleProducts) {
+    btn.style.display = 'none';
+  }
+}
+
+function toggleProducts() {
+  const products = document.querySelectorAll('#products-grid .product-card');
+  const btn = document.getElementById('toggle-products-btn');
+
+  productsExpanded = !productsExpanded;
+
+  if (productsExpanded) {
+    products.forEach((product, index) => {
+      product.style.display = '';
+
+      if (index >= visibleProducts) {
+        product.classList.remove('visible');
+
+        setTimeout(() => {
+          product.classList.add('visible');
+        }, (index - visibleProducts) * 80);
+      }
+    });
+
+    btn.classList.add('compact');
+    btn.innerHTML = '↑';
+
+  } else {
+    products.forEach((product, index) => {
+      product.style.display = index < visibleProducts ? '' : 'none';
+    });
+
+    btn.classList.remove('compact');
+    btn.innerHTML = 'Mostrar más productos';
+
+    document.getElementById('products-grid').scrollIntoView({
+      behavior: 'smooth',
+      block: 'start'
+    });
+  }
 }
 
 // ─────────────── BOUQUET BUILDER ───────────────
@@ -2874,6 +3014,10 @@ if (dateInput) {
 
 console.log('%c🌸 Bloom Petals — Florería Premium', 'font-size:18px;color:#C9A84C;font-family:serif;');
 console.log('%cDiseñado con amor · Lima, Perú 2025', 'font-size:12px;color:#9E8FAF;');
+
+window.addEventListener('DOMContentLoaded', () => {
+  initializeProducts();
+});
 </script>
 </body>
 </html>
